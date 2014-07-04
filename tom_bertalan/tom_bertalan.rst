@@ -161,7 +161,7 @@ In *geometric multigrid*, the operator at the fine level :math:`A_h` is replaced
 
 The alternative to geometric multigrid is *algebraic multigrid*, in which the coarse operator is derived not from the PDE but only from the fine operator. Ruge-Steuben coarsening bases this transformation on the pattern of coefficients in :math:`A_h`, but our current implementation (see |implementation|) instead uses a stencil-based average.
 
-Before the cycling portion of the algorithm, a setup phase is executed in which we generate a hierarchy of restriction matrices and coefficient matrices. The restriction array at position :math:`h` in the hierarchy, where the number of unknowns is :math:`N_h`, and where the number of unknowns for the next coarsest level is :math:`N_H`, is :math:`R_h^H`, or simply :math:`R_h`. It functions as an intergrid transfer operator from grid :math:`H` to grid :math:`h`, and has shape :math:`(N_H,N_h)`. That is, it can reduce the size of a vector from :math:`N_h` to :math:`N_H` elements:
+Before the cycling portion of the algorithm, a setup phase is executed in which we generate a hierarchy of restriction matrices and coefficient matrices. The restriction matrix at position :math:`h` in the hierarchy, where the number of unknowns is :math:`N_h`, and where the number of unknowns for the next coarsest level is :math:`N_H`, is :math:`R_h^H`, or simply :math:`R_h`. It functions as an intergrid transfer operator from grid :math:`H` to grid :math:`h`, and has shape :math:`(N_H,N_h)`. That is, it can reduce the size of a vector from :math:`N_h` to :math:`N_H` elements:
 
 .. math::
     :label: algebraicrestriction
