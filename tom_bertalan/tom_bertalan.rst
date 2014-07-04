@@ -95,7 +95,7 @@ Existing Python Implementations
 .. What open source multigrid packages are available and brief overview of them from their website/documentation. Also mention about Matlab version which is not an open source, but openly available.
 
 Current open-source Python multigrid implementations are speedy and capable solvers.
-Examples include  *PyAMG* (due to Nathan Bell [Bell]_)
+Examples include  *PyAMG* (due to Nathan Bell et al. [Bell]_)
 is a very capable and speedy multigrid solver,
 whose core is written in C.
 The ML package in the Trilinos project, though written in C++,
