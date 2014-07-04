@@ -5,21 +5,21 @@ from sys import _getframe, exc_info
 
 
 def tests():
-    try:        
+    try:
         test_restrictions()
     except: showexception
-    
+
     try:
         test_coarsen_A()
     except: showexception()
-    
+
     try:
         test_iter()
     except: showexception()
-    
+
     try: test_amg_cycle()
     except: showexception()
-        
+
 
 def restriction(N, shape):
     alpha = len(shape)  # number of dimensions
@@ -81,7 +81,7 @@ def test_restrictions():
     verbose = False
     R = restrictions(N, problemshape, coarsest_level,\
                 dense=False, verbose=verbose)
-    
+
 def coarsen_A(A_in, coarsest_level, R, dense=False):
     levels = coarsest_level + 1
     A = list(range(levels))
@@ -92,7 +92,7 @@ def coarsen_A(A_in, coarsest_level, R, dense=False):
                             A[level-1]),
                         R[level-1].T)
     return A
-    
+
 def test_coarsen_A():
     saytest()
     N = 64
@@ -101,32 +101,55 @@ def test_coarsen_A():
     R = restrictions(N, problemshape,coarsest_level)
     A_in = np.empty((N,N))
     coarsen_A(A_in, coarsest_level, R, dense=False)
-    
+
 
 def iterative_solve(A, b, x, iterations):
     N = b.size
     iteration = 0
     for iteration in range(iterations):
-        for i in range(N):  # [ 0 1 2 3 4 ... n-1 ]
+        for i in range(N):
             x[i] = x[i] + (b[i] - np.dot(
                                     A[i, :],
                                     x.reshape((N, 1)))
                         ) / A[i, i]
     return x
-    
+
+
+def poisson1D(N):
+    A = -2 * np.eye(N)
+    upTri = np.hstack((
+                       np.zeros((N,1)),
+                       np.vstack((
+                                  np.eye(N-1),
+                                  np.zeros((1,N-1)),
+                                 ))
+               ))
+    A += upTri + upTri.T
+    return A
 
 def test_iter():
     saytest()
     N = 64
-    problemshape = (8,8)
-    u_actual = np.random.random((N,))
-    A = np.random.random((N,N))
+    A = poisson1D(N)
+    #u_actual = np.dot(A, np.random.normal(size=(N,)))  # smoother target solution; harder to explain
+    u_actual = np.random.normal(size=(N,))
+
+
     b = np.dot(A,u_actual)
-    u_iter = iterative_solve(A, b, np.zeros((N,)), 10)
+    u_iter = iterative_solve(A, b, np.zeros(N), 19)
     error = u_actual - u_iter
+    if False:
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(u_actual / np.linalg.norm(u_actual), label='actual')
+        ax.plot(np.arange(N), u_iter / np.linalg.norm(u_iter), label='iter')
+        ax.legend(loc='best')
+        plt.show()
+
     print 'norm is', np.linalg.norm(error)
 
-    
+
 def amg_cycle(A, b, level, \
             R, parameters, initial='None'):
     # Unpack parameters, such as pre_iterations
@@ -174,14 +197,14 @@ def amg_cycle(A, b, level, \
         u_out = np.linalg.solve(A[level],\
                             b.reshape((N, 1)))
     return u_out
-    
+
 def test_amg_cycle():
     saytest()
     N = 64
-    problemshape = (8,8)
+    problemshape = (64,)
     coarsest_level = 3
     u_actual = np.random.random((N,))
-    A_in = np.random.random((N,N))
+    A_in = poisson1D(N)
     b = np.dot(A_in, u_actual)
     R = restrictions(N, problemshape,coarsest_level)
     parameters = {'gridlevels': coarsest_level, 'pre_iterations': 1}
@@ -190,19 +213,19 @@ def test_amg_cycle():
     error = u_actual - cycle_result
     print 'norm is', np.linalg.norm(error), '(1 %i-cycle)' % (coarsest_level-1)
 
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
 # Helper functions for testing.
 def whoami(level=1):
     '''Return the name of the calling function. Specifying a level greater than
     1 will return the name of the calling function's caller.'''
     return _getframe(level).f_code.co_name
-    
+
 
 def showexception():
     logging.exception('error in %s:', str(whoami(2)))
