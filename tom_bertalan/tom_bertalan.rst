@@ -41,7 +41,7 @@ Introduction to Multigrid
 
 Multigrid algorithms aim to accelerate the solution of large linear systems that typically arise from the discretization of partial differential equations. While small systems (hundreds of unknowns) can efficiently be solved with direct  methods such as Gaussian elimination or iterative methods such as Gauss-Seidel, these methods do not scale well.  In contrast, multigrid methods can theoretically solve a system in :math:`O(N)` CPU steps and memory usage [Brandt2]_.
 
-The entire multigrid algorithm can be summarized in a few steps. The process below assumes that the user has first discretized the partial differential equation ("PDE") of interest, or otherwise expressed the problem as a matrix system of equations.
+The entire multigrid algorithm can be summarized in a few steps. The process below (also schematized in Fig. :ref:`cycle`) assumes that the user has first discretized the partial differential equation ("PDE") of interest, or otherwise expressed the problem as a matrix system of equations.
 
 #. Setup hierarchies of operators and restriction matrices.
 #. Find an approximation to the solution (pre-smooth the high-frequency error).
@@ -55,7 +55,6 @@ Because of the possibility for a recursive call, this is often called a multigri
 
 The basic premise of multigrid is that a quick but sloppy solution can be corrected using information calculated at a coarser resolution. That is, an approximation is first made at the fine resolution, and the residual from this approximation is used as the right-hand side for a correction equation to be solved at a much coarser resolution, where computational costs are also much lower. This basic two-grid scheme can be extended by using a recursive call at the coarse level instead of a direct solver.
 
-.. **Maybe include some stuff from our pitch, also?**
 
 History
 -------
@@ -95,7 +94,14 @@ Existing Python Implementations
 
 .. What open source multigrid packages are available and brief overview of them from their website/documentation. Also mention about Matlab version which is not an open source, but openly available.
 
-The current open-source Python multigrid implementation *PyAMG* (due to Nathan Bell [Bell]_) is a very capable and speedy multigrid solver, with a core written in C. However, because of the extent of optimizations (and the inclusion of C code), it is not particularly readable.
+Current open-source Python multigrid implementations are speedy and capable solvers.
+Examples include  *PyAMG* (due to Nathan Bell [Bell]_)
+is a very capable and speedy multigrid solver,
+whose core is written in C.
+The ML package in the Trilinos project, though written in C++,
+is available for use in Python through the PyTrilinos package [PyTrilinos]_.
+Both of these are useful for production work,
+but are  not particularly readable.
 
 .. Additionally, it is not parallelized to make use of multiple CPUs or GPU compute units. 
 
@@ -311,7 +317,6 @@ The following code generates a particular restriction matrix, given a number of 
 
 .. code-block:: python
 
-    from sys import exit
     def restriction(N, shape):
         alpha = len(shape)  # number of dimensions
         R = np.zeros((N / (2 ** alpha), N))
@@ -321,20 +326,16 @@ The following code generates a particular restriction matrix, given a number of 
             NY = shape[1]
         each = 1.0 / (2 ** alpha)
         if alpha == 1:
-            coarse_columns = np.array(range(N)).\
-                            reshape(shape)\
+            coarse_columns = np.arange(N).reshape(shape)\
                             [::2].ravel()
         elif alpha == 2:
-            coarse_columns = np.array(range(N)).\
-                            reshape(shape)\
+            coarse_columns = np.arange(N).reshape(shape)\
                             [::2, ::2].ravel()
         elif alpha == 3:
-            coarse_columns = np.array(range(N)).\
-                            reshape(shape)\
+            coarse_columns = np.arange(N).reshape(shape)\
                             [::2, ::2, ::2].ravel()
         else:
-            print "> 3 dimensions is not implemented."
-            exit()
+            raise NotImplementedError("> 3 dimensions")
         for c in coarse_columns:
             R[r, c] = each
             R[r, c + 1] = each
@@ -350,21 +351,20 @@ The following code generates a particular restriction matrix, given a number of 
         return R
 
 
-
 The function ``restriction()`` is called several times by the following code to generate the complete hierarchy of restriction matrices.
 
 .. code-block:: python
 
-    def restrictions(N, problemshape, coarsest_level,\
+    def restrictions(N, problemshape, coarsest_level,
                     dense=False, verbose=False):
         alpha = np.array(problemshape).size
         levels = coarsest_level + 1
         # We don't need R at the coarsest level:
-        R = list(range(levels - 1))
+        R = [None] * (levels - 1)
         for level in range(levels - 1):
             newsize = N / (2 ** (alpha * level))
             R[level] = restriction(newsize,
-                        tuple(np.array(problemshape)\
+                        tuple(np.array(problemshape)
                             / (2 ** level)))
         return R
 
@@ -375,7 +375,7 @@ Using the hierarchy of restriction matrices produced by ``restrictions()`` and t
 
     def coarsen_A(A_in, coarsest_level, R, dense=False):
         levels = coarsest_level + 1
-        A = list(range(levels))
+        A = [None] * levels
         A[0] = A_in
         for level in range(1, levels):
             A[level] = np.dot(np.dot(
@@ -399,7 +399,7 @@ Our iterative smoother is currently a simple implementation of Gauss-Seidel smoo
         N = b.size
         iteration = 0
         for iteration in range(iterations):
-            for i in range(N):  # [ 0 1 2 3 4 ... n-1 ]
+            for i in range(N):
                 x[i] = x[i] + (b[i] - np.dot(
                                         A[i, :],
                                         x.reshape((N, 1)))
@@ -416,7 +416,7 @@ The following function uses all the preceeding functions to perform a multigrid 
 
 .. code-block:: python
 
-    def amg_cycle(A, b, level, \
+    def amg_cycle(A, b, level,
                 R, parameters, initial='None'):
         # Unpack parameters, such as pre_iterations
         exec ', '.join(parameters) +\
@@ -426,19 +426,20 @@ The following function uses all the preceeding functions to perform a multigrid 
         coarsest_level = gridlevels - 1
         N = b.size
         if level < coarsest_level:
-            u_apx = iterative_solve(\
-                                    A[level],\
-                                    b,\
-                                    initial,\
-                                    pre_iterations,)
-            b_coarse = np.dot(R[level],\
+            u_apx = iterative_solve(
+                                    A[level],
+                                    b,
+                                    initial,
+                                    pre_iterations,
+                                    )
+            b_coarse = np.dot(R[level],
                             b.reshape((N, 1)))
             NH = len(b_coarse)
             b_coarse.reshape((NH, ))
             residual = b - np.dot(A[level], u_apx)
-            coarse_residual = np.dot(\
-                                R[level],\
-                                residual.reshape((N, 1))\
+            coarse_residual = np.dot(
+                                R[level],
+                                residual.reshape((N, 1))
                                 ).reshape((NH,))
             coarse_correction = amg_cycle(
                                 A,
@@ -447,20 +448,20 @@ The following function uses all the preceeding functions to perform a multigrid 
                                 R,
                                 parameters,
                                 )
-            correction = np.dot(\
-                                R[level].transpose(),\
-                                coarse_correction.\
-                                reshape((NH, 1))\
+            correction = np.dot(
+                                R[level].transpose(),
+                                coarse_correction.
+                                reshape((NH, 1))
                             ).reshape((N, ))
             u_out = u_apx + correction
             norm = np.linalg.norm(b - np.dot(
                                         A[level],
-                                        u_out.\
+                                        u_out.
                                         reshape((N,1))
                                         ))
         else:
             norm = 0
-            u_out = np.linalg.solve(A[level],\
+            u_out = np.linalg.solve(A[level],
                                 b.reshape((N, 1)))
         return u_out
 
@@ -603,6 +604,8 @@ References
 .. [Nicolaides] R A Nicolaides, *On Some Theoretical and Practical Aspects of Multigrid Methods,* Mathematics of Computation, 1979. [Online]. Available: http://www.jstor.org/stable/10.2307/2006069. [Accessed: 07-Jul-2012].
 
 .. [Notay] Y Notay, *An aggregation-based algebraic multigrid method,* Electronic Transactions on Numerical Analysis, vol. 37, pp. 123-146, 2010.
+
+.. [PyTrilinos] M Sala, W Spotz, and M Heroux, *PyTrilinos: High-Performance Distributed-Memory Solvers for Python,* ACM Transactions on Mathematical Software (TOMS), vol 34, no 2. Mar. 2008.
 
 .. [Trottenberg] U Trottenberg, C W Oosterlee, and A Schüller, *Multigrid*, Academic Press, 2001, p. 631.
 

@@ -40,7 +40,6 @@ def restriction(N, shape):
                          [::2, ::2, ::2].ravel()
     else:
         raise NotImplementedError("> 3 dimensions")
-        exit()
     for c in coarse_columns:
         R[r, c] = each
         R[r, c + 1] = each
