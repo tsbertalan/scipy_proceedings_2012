@@ -149,29 +149,30 @@ def test_iter(niter=1024, N=64, doPlot=False):
     assert norm < 1e-1  # It does converge further, but pretty slowly.
 
 
-def amg_cycle(A, b, level, \
+def amg_cycle(A, b, level,
             R, parameters, initial='None'):
     # Unpack parameters, such as pre_iterations
     exec ', '.join(parameters) +\
-        ',  = parameters.values()'
+         ',  = parameters.values()'
     if initial == 'None':
         initial = np.zeros((b.size, ))
     coarsest_level = gridlevels - 1
     N = b.size
     if level < coarsest_level:
-        u_apx = iterative_solve(\
-                                A[level],\
-                                b,\
-                                initial,\
-                                pre_iterations,)
-        b_coarse = np.dot(R[level],\
+        u_apx = iterative_solve(
+                                A[level],
+                                b,
+                                initial,
+                                pre_iterations,
+                                )
+        b_coarse = np.dot(R[level],
                         b.reshape((N, 1)))
         NH = len(b_coarse)
         b_coarse.reshape((NH, ))
         residual = b - np.dot(A[level], u_apx)
-        coarse_residual = np.dot(\
-                            R[level],\
-                            residual.reshape((N, 1))\
+        coarse_residual = np.dot(
+                            R[level],
+                            residual.reshape((N, 1))
                             ).reshape((NH,))
         coarse_correction = amg_cycle(
                             A,
@@ -180,20 +181,20 @@ def amg_cycle(A, b, level, \
                             R,
                             parameters,
                             )
-        correction = np.dot(\
-                            R[level].transpose(),\
-                            coarse_correction.\
-                            reshape((NH, 1))\
+        correction = np.dot(
+                            R[level].transpose(),
+                            coarse_correction.
+                            reshape((NH, 1))
                         ).reshape((N, ))
         u_out = u_apx + correction
         norm = np.linalg.norm(b - np.dot(
                                     A[level],
-                                    u_out.\
+                                    u_out.
                                     reshape((N,1))
                                     ))
     else:
         norm = 0
-        u_out = np.linalg.solve(A[level],\
+        u_out = np.linalg.solve(A[level],
                             b.reshape((N, 1)))
     return u_out
 
