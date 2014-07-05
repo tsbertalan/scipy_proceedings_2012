@@ -436,7 +436,7 @@ The following function uses all the preceeding functions to perform a multigrid 
                                     )
             b_coarse = np.dot(R[level],
                             b.reshape((N, 1)))
-            NH = len(b_coarse)
+            NH = b_coarse.size
             b_coarse.reshape((NH, ))
             residual = b - np.dot(A[level], u_apx)
             coarse_residual = np.dot(
@@ -466,7 +466,7 @@ The following function uses all the preceeding functions to perform a multigrid 
             u_out = np.linalg.solve(A[level],
                                 b.reshape((N, 1)))
         return u_out
-
+    
 
 Results
 =======

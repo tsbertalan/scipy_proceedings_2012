@@ -166,7 +166,7 @@ def amg_cycle(A, b, level,
                                 )
         b_coarse = np.dot(R[level],
                         b.reshape((N, 1)))
-        NH = len(b_coarse)
+        NH = b_coarse.size
         b_coarse.reshape((NH, ))
         residual = b - np.dot(A[level], u_apx)
         coarse_residual = np.dot(
