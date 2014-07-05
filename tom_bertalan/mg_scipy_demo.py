@@ -57,7 +57,7 @@ def restriction(N, shape):
 
 def restrictions(N, problemshape, coarsest_level,
                 dense=False, verbose=False):
-    alpha = np.array(problemshape).size
+    alpha = len(problemshape)
     levels = coarsest_level + 1
     # We don't need R at the coarsest level:
     R = [None] * (levels - 1)
