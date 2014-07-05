@@ -385,6 +385,8 @@ Using the hierarchy of restriction matrices produced by ``restrictions()`` and t
         return A
 
 Both ``restrictions()`` and ``coarsen_A()`` return lists of arrays.
+These lists are analagous to the objects :math:`R_k` and :math:`A_k` in the |theory| section.
+Although, in that section, a two-level scheme was described, so that :math:`k` only took two values.
 
 Smoother
 --------
