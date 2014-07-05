@@ -504,7 +504,7 @@ As shown, this two-grid solver is converging on the true solution in the vicinit
 
 .. figure:: uss-1728-multiple_cycles.png
 
-    Pressure isosurfaces of several solutions to a 3D porous media problem with :math:`12^3=1728` unknowns. The grey outer surface is a direct solution, while the blue inner surfaces are the result of different numbers of multigrid V-cycles |--| with more V-cycles, the multigrid solution approaches the true solution. Plotted with MayaVi's ``mlab.contour3d``. :label:`solution`
+    Pressure isosurfaces of several solutions to a 3D porous media problem with :math:`12^3=1728` unknowns. The grey outer surface is a direct solution, while the blue inner surfaces are the result of different numbers of multigrid V-cycles |--| with more V-cycles, the multigrid solution approaches the true solution, which arises from a columnar injection well in one corner of the domain. Plotted with MayaVi's ``mlab.contour3d``. :label:`solution`
 
 Discussion
 ==========
